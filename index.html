@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock ATK DC - Cloud Sync per User</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- NOTIFICATION / MESSAGE BOX -->
+    <div class="fixed top-4 right-4 z-50 max-w-md w-full px-4">
+        <div id="alert-box" class="hidden p-4 rounded-xl text-sm flex items-center justify-between shadow-lg transition-all bg-white">
+            <span id="alert-message"></span>
+            <button onclick="hideAlert()" class="text-lg font-bold ml-4">&times;</button>
+        </div>
+    </div>
+
+    <!-- ================= MENU LOGIN ================= -->
+    <div id="login-container" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="bg-indigo-600 text-white w-14 h-14 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4 text-2xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Stock ATK DC</h2>
+            </div>
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="login-user" required placeholder="Masukkan username" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-key"></i></span>
+                        <input type="password" id="login-pass" required placeholder="Masukkan password" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Masuk Sistem
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP CONTAINER (HIDDEN UNTIL LOGIN) ================= -->
+    <div id="main-app-container" class="hidden flex flex-col min-h-screen">
+        <!-- Header Navbar -->
+        <header class="bg-indigo-600 text-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white text-indigo-600 p-2.5 rounded-xl shadow">
+                        <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight">Stock ATK DC</h1>
+                    </div>
+                </div>
+                <!-- Nav Tabs & Logout -->
+                <div class="flex items-center gap-3 flex-wrap">
+                    <nav class="flex flex-wrap gap-1 bg-indigo-700/60 p-1.5 rounded-xl border border-indigo-500/30">
+                        <button onclick="switchTab('master')" id="btn-master" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-white text-indigo-700 shadow-sm">
+                            <i class="fa-solid fa-database mr-1.5"></i> Master Barang
+                        </button>
+                        <button onclick="switchTab('bagian')" id="btn-bagian" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-sitemap mr-1.5"></i> Master Bagian
+                        </button>
+                        <button onclick="switchTab('users')" id="btn-users" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-users-gear mr-1.5"></i> Master User
+                        </button>
+                        <button onclick="switchTab('in')" id="btn-in" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-arrow-down-long mr-1.5"></i> Menu In
+                        </button>
+                        <button onclick="switchTab('out')" id="btn-out" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-arrow-up-long mr-1.5"></i> Menu Out
+                        </button>
+                        <button onclick="switchTab('so')" id="btn-so" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-clipboard-check mr-1.5"></i> Menu SO Fisik
+                        </button>
+                        <button onclick="switchTab('view')" id="btn-view" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-chart-pie mr-1.5"></i> Stock View
+                        </button>
+                        <button onclick="switchTab('report')" id="btn-report" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600">
+                            <i class="fa-solid fa-file-lines mr-1.5"></i> Report & Usulan
+                        </button>
+                    </nav>
+                    <div class="flex items-center gap-2">
+                        <span id="current-user-badge" class="text-xs bg-indigo-700/80 px-3 py-2 rounded-xl text-indigo-100 font-medium"></span>
+                        <button onclick="handleLogout()" class="bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm flex items-center gap-1.5" title="Keluar">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+            <!-- ================= TAB 1: MASTER BARANG ================= -->
+            <section id="tab-master" class="tab-content space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-plus text-indigo-600"></i> Input Master Barang Baru
+                    </h2>
+                    <form id="form-master" onsubmit="saveMaster(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">PLU (Kode Barang)</label>
+                            <input type="text" id="master-plu" required placeholder="Contoh: PLU001" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nama Barang (Desc)</label>
+                            <input type="text" id="master-desc" required placeholder="Contoh: Kertas A4 80gsm" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> Save Master
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base">Daftar Master Barang</h3>
+                        <span id="count-master" class="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">0 Item</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">PLU</th>
+                                    <th class="p-4 font-semibold">Nama Barang (Desc)</th>
+                                    <th class="p-4 font-semibold text-center w-24">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-master-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 1.5: MASTER BAGIAN ================= -->
+            <section id="tab-bagian" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-plus text-indigo-600"></i> Input Master Bagian Baru
+                    </h2>
+                    <form id="form-bagian" onsubmit="saveBagian(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nama Bagian</label>
+                            <input type="text" id="master-nama-bagian" required placeholder="Contoh: Divisi Produksi" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> Save Bagian
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base">Daftar Master Bagian</h3>
+                        <span id="count-bagian" class="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">0 Bagian</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">Nama Bagian</th>
+                                    <th class="p-4 font-semibold text-center w-24">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-bagian-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 1.6: MASTER USER ================= -->
+            <section id="tab-users" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-indigo-600"></i> Tambah User Login Baru
+                    </h2>
+                    <form id="form-users" onsubmit="saveNewUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username Baru</label>
+                            <input type="text" id="new-username" required placeholder="Contoh: operator1" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
+                            <input type="password" id="new-password" required placeholder="Password login" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> Save User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base">Daftar User Terdaftar</h3>
+                        <span id="count-users" class="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">0 User</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">Username</th>
+                                    <th class="p-4 font-semibold">Password</th>
+                                    <th class="p-4 font-semibold text-center w-24">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-users-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: MENU IN ================= -->
+            <section id="tab-in" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-down text-emerald-600"></i> Input Transaksi Barang Masuk (IN)
+                    </h2>
+                    <form id="form-in" onsubmit="saveTransaction(event, 'in')" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Pilih PLU / Barang</label>
+                            <select id="in-plu" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tanggal & Waktu</label>
+                            <input type="datetime-local" id="in-date" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Qty (Jumlah)</label>
+                            <input type="number" min="1" id="in-qty" required placeholder="0" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Keterangan</label>
+                            <input type="text" id="in-ket" placeholder="Contoh: Restock dari supplier" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> Save In
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base">Riwayat Barang Masuk (IN)</h3>
+                        <span id="count-in" class="text-xs bg-emerald-50 text-emerald-600 font-semibold px-3 py-1 rounded-full">0 Transaksi</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">Tanggal & Waktu</th>
+                                    <th class="p-4 font-semibold">PLU</th>
+                                    <th class="p-4 font-semibold">Desc (Nama Barang)</th>
+                                    <th class="p-4 font-semibold text-right">Qty</th>
+                                    <th class="p-4 font-semibold">Keterangan</th>
+                                    <th class="p-4 font-semibold text-center w-20">Hapus (X)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-in-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: MENU OUT ================= -->
+            <section id="tab-out" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-up text-rose-600"></i> Input Transaksi Barang Keluar (OUT)
+                    </h2>
+                    <form id="form-out" onsubmit="saveTransaction(event, 'out')" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Pilih PLU / Barang</label>
+                            <select id="out-plu" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Bagian</label>
+                            <select id="out-bagian" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+                                <option value="">-- Pilih Bagian --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tanggal & Waktu</label>
+                            <input type="datetime-local" id="out-date" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Qty (Jumlah)</label>
+                            <input type="number" min="1" id="out-qty" required placeholder="0" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Keterangan</label>
+                            <input type="text" id="out-ket" placeholder="Contoh: Pengeluaran divisi" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> Save Out
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base">Riwayat Barang Keluar (OUT)</h3>
+                        <span id="count-out" class="text-xs bg-rose-50 text-rose-600 font-semibold px-3 py-1 rounded-full">0 Transaksi</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">Tanggal & Waktu</th>
+                                    <th class="p-4 font-semibold">PLU</th>
+                                    <th class="p-4 font-semibold">Desc (Nama Barang)</th>
+                                    <th class="p-4 font-semibold">Bagian</th>
+                                    <th class="p-4 font-semibold text-right">Qty</th>
+                                    <th class="p-4 font-semibold">Keterangan</th>
+                                    <th class="p-4 font-semibold text-center w-20">Hapus (X)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-out-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3.5: MENU SO FISIK ================= -->
+            <section id="tab-so" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check text-blue-600"></i> Input Stock Opname (SO) Fisik
+                    </h2>
+                    <form id="form-so" onsubmit="saveSO(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Pilih PLU / Barang</label>
+                            <select id="so-plu" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tanggal & Waktu SO</label>
+                            <input type="datetime-local" id="so-date" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Qty Fisik</label>
+                            <input type="number" min="0" id="so-qty" required placeholder="0" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> Save SO
+                            </button>
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Keterangan SO</label>
+                            <input type="text" id="so-ket" placeholder="Contoh: Opname bulanan" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base">Riwayat Stock Opname (SO) Fisik</h3>
+                        <span id="count-so" class="text-xs bg-blue-50 text-blue-600 font-semibold px-3 py-1 rounded-full">0 Data SO</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">Tanggal & Waktu</th>
+                                    <th class="p-4 font-semibold">PLU</th>
+                                    <th class="p-4 font-semibold">Desc (Nama Barang)</th>
+                                    <th class="p-4 font-semibold text-right">Qty Sistem</th>
+                                    <th class="p-4 font-semibold text-right">Qty Fisik</th>
+                                    <th class="p-4 font-semibold text-right">Selisih</th>
+                                    <th class="p-4 font-semibold">Keterangan</th>
+                                    <th class="p-4 font-semibold text-center w-20">Hapus (X)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-so-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: VIEW (STOCK SUMMARY) ================= -->
+            <section id="tab-view" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Rekapitulasi Stok (Stock Summary)</h3>
+                            <p class="text-xs text-slate-500">In, Out, Stock, Fisik Qty, dan Stock VS Fisik real-time.</p>
+                        </div>
+                        <button onclick="renderView()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
+                            <i class="fa-solid fa-rotate"></i> Refresh Data
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                    <th class="p-4 font-semibold">PLU</th>
+                                    <th class="p-4 font-semibold">Desc (Nama Barang)</th>
+                                    <th class="p-4 font-semibold text-right">Qty In</th>
+                                    <th class="p-4 font-semibold text-right">Qty Out</th>
+                                    <th class="p-4 font-semibold text-right">Stock (Sisa)</th>
+                                    <th class="p-4 font-semibold text-right">Fisik Qty</th>
+                                    <th class="p-4 font-semibold text-right">Stock VS Fisik</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-view-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: REPORT & USULAN ================= -->
+            <section id="tab-report" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-indigo-600"></i> Filter Laporan & Usulan Pengadaan Barang
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tanggal Awal</label>
+                            <input type="date" id="report-start" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Tanggal Akhir</label>
+                            <input type="date" id="report-end" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="generateReport()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-search"></i> Generate
+                            </button>
+                            <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2.5 px-4 rounded-xl transition-all text-sm" title="Cetak">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="report-result-container" class="space-y-6 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase">Total Item Tergerak</p>
+                                <h4 id="rep-stat-items" class="text-2xl font-bold text-slate-800 mt-1">0</h4>
+                            </div>
+                            <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl"><i class="fa-solid fa-box text-lg"></i></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase">Total Qty Keluar</p>
+                                <h4 id="rep-stat-out" class="text-2xl font-bold text-rose-600 mt-1">0</h4>
+                            </div>
+                            <div class="bg-rose-50 text-rose-600 p-3 rounded-xl"><i class="fa-solid fa-arrow-trend-down text-lg"></i></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase">Rekomendasi Usulan</p>
+                                <h4 id="rep-stat-suggest" class="text-2xl font-bold text-emerald-600 mt-1">0 Item</h4>
+                            </div>
+                            <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl"><i class="fa-solid fa-cart-shopping text-lg"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-6 border-b border-slate-200">
+                            <h3 class="font-bold text-slate-800 text-base">Rekapitulasi Pergerakan Stok Berdasarkan Periode</h3>
+                            <p id="report-range-label" class="text-xs text-slate-500 mt-0.5"></p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                                        <th class="p-4 font-semibold">PLU</th>
+                                        <th class="p-4 font-semibold">Desc (Nama Barang)</th>
+                                        <th class="p-4 font-semibold text-right">In (Periode)</th>
+                                        <th class="p-4 font-semibold text-right">Out (Periode)</th>
+                                        <th class="p-4 font-semibold text-right">Stok Saat Ini</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-report-body" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white rounded-2xl shadow-md p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="bg-white/10 p-2.5 rounded-xl text-indigo-300">
+                                <i class="fa-solid fa-lightbulb text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg">Usulan & Rekomendasi Pengadaan Barang Selanjutnya</h3>
+                                <p class="text-xs text-indigo-200">Dihitung otomatis berdasarkan tingkat pengeluaran dan stok yang menipis.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto bg-white/5 rounded-xl border border-white/10">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-white/10 text-indigo-200 text-xs uppercase tracking-wider">
+                                        <th class="p-3.5 font-semibold">PLU</th>
+                                        <th class="p-3.5 font-semibold">Nama Barang</th>
+                                        <th class="p-3.5 font-semibold text-right">Total Keluar</th>
+                                        <th class="p-3.5 font-semibold text-right">Stok Sisa</th>
+                                        <th class="p-3.5 font-semibold text-center">Status Usulan / Reorder</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-suggestion-body" class="divide-y divide-white/10"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-white border-t border-slate-200 py-4 mt-auto text-center text-xs text-slate-500">
+            &copy; 2026 Stock ATK DC. Cloud Sync per User Active.
+        </footer>
+    </div>
+
+    <!-- Firebase & Application Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'rekap-stok-app-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        let app, dbAuth, firestoreDb;
+        let currentUser = null;
+        let currentLoggedUsername = null;
+
+        window.db = {
+            master: [],
+            bagian: [],
+            in: [],
+            out: [],
+            so: [],
+            users: [{ username: 'admin', pass: 'admin123' }]
+        };
+
+        async function initFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    app = initializeApp(firebaseConfig);
+                    firestoreDb = getFirestore(app);
+                    dbAuth = getAuth(app);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(dbAuth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(dbAuth);
+                    }
+
+                    onAuthStateChanged(dbAuth, (user) => {
+                        if (user) {
+                            currentUser = user;
+                            initUsersRealtimeSync();
+                        }
+                    });
+                } else {
+                    loadFromLocalStorage();
+                }
+            } catch (e) {
+                console.error("Firebase init error, fallback to localStorage:", e);
+                loadFromLocalStorage();
+            }
+        }
+
+        function loadFromLocalStorage() {
+            window.db.users = JSON.parse(localStorage.getItem('app_users')) || [{ username: 'admin', pass: 'admin123' }];
+            if (currentLoggedUsername) {
+                loadUserLocalData(currentLoggedUsername);
+            }
+        }
+
+        function loadUserLocalData(username) {
+            const collections = ['master', 'bagian', 'in', 'out', 'so'];
+            collections.forEach(colName => {
+                const storageKey = `app_${username}_${colName}`;
+                window.db[colName] = JSON.parse(localStorage.getItem(storageKey)) || [];
+            });
+        }
+
+        function initUsersRealtimeSync() {
+            if (!currentUser || !firestoreDb) return;
+            
+            const usersRef = collection(firestoreDb, 'artifacts', appId, 'public', 'data', 'users');
+            onSnapshot(usersRef, (snapshot) => {
+                let items = [];
+                snapshot.forEach(docSnap => {
+                    items.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                if (items.length === 0) {
+                    saveCloudData('users', 'admin', { username: 'admin', pass: 'admin123' });
+                    window.db.users = [{ username: 'admin', pass: 'admin123' }];
+                } else {
+                    window.db.users = items;
+                }
+                renderUsers();
+            });
+        }
+
+        function syncUserCollections(username) {
+            if (!firestoreDb || !currentUser) return;
+            const collections = ['master', 'bagian', 'in', 'out', 'so'];
+            
+            collections.forEach(colName => {
+                const colRef = collection(firestoreDb, 'artifacts', appId, 'users', username, colName);
+                onSnapshot(colRef, (snapshot) => {
+                    let items = [];
+                    snapshot.forEach(docSnap => {
+                        items.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    window.db[colName] = items;
+                    localStorage.setItem(`app_${username}_${colName}`, JSON.stringify(items));
+                    refreshCurrentView();
+                }, (error) => {
+                    console.error(`Error syncing ${colName} for user ${username}:`, error);
+                });
+            });
+        }
+
+        window.saveCloudData = async function(colName, docId, data) {
+            if (firestoreDb && currentUser && currentLoggedUsername && colName !== 'users') {
+                try {
+                    const docRef = doc(firestoreDb, 'artifacts', appId, 'users', currentLoggedUsername, colName, String(docId));
+                    await setDoc(docRef, data, { merge: true });
+                } catch (e) {
+                    console.error("Cloud save error:", e);
+                }
+            } else if (colName === 'users' && firestoreDb && currentUser) {
+                try {
+                    const docRef = doc(firestoreDb, 'artifacts', appId, 'public', 'data', 'users', String(docId));
+                    await setDoc(docRef, data, { merge: true });
+                } catch (e) {
+                    console.error("Cloud user save error:", e);
+                }
+            }
+            if (colName !== 'users' && currentLoggedUsername) {
+                localStorage.setItem(`app_${currentLoggedUsername}_${colName}`, JSON.stringify(window.db[colName]));
+            } else if (colName === 'users') {
+                localStorage.setItem('app_users', JSON.stringify(window.db.users));
+            }
+        }
+
+        window.deleteCloudData = async function(colName, docId) {
+            if (firestoreDb && currentUser && currentLoggedUsername && colName !== 'users') {
+                try {
+                    const docRef = doc(firestoreDb, 'artifacts', appId, 'users', currentLoggedUsername, colName, String(docId));
+                    await deleteDoc(docRef);
+                } catch (e) {
+                    console.error("Cloud delete error:", e);
+                }
+            } else if (colName === 'users' && firestoreDb && currentUser) {
+                try {
+                    const docRef = doc(firestoreDb, 'artifacts', appId, 'public', 'data', 'users', String(docId));
+                    await deleteDoc(docRef);
+                } catch (e) {
+                    console.error("Cloud user delete error:", e);
+                }
+            }
+            if (colName !== 'users' && currentLoggedUsername) {
+                localStorage.setItem(`app_${currentLoggedUsername}_${colName}`, JSON.stringify(window.db[colName]));
+            } else if (colName === 'users') {
+                localStorage.setItem('app_users', JSON.stringify(window.db.users));
+            }
+        }
+
+        function refreshCurrentView() {
+            const activeTab = document.querySelector('.tab-content:not(.hidden)');
+            if (!activeTab) return;
+            const tabId = activeTab.id.replace('tab-', '');
+            if (tabId === 'master') renderMaster();
+            else if (tabId === 'bagian') renderBagian();
+            else if (tabId === 'users') renderUsers();
+            else if (tabId === 'in' || tabId === 'out') {
+                populateDropdowns();
+                renderTransactions(tabId);
+            } else if (tabId === 'so') {
+                populateDropdownsSO();
+                renderSO();
+            } else if (tabId === 'view') renderView();
+        }
+
+        window.showAlert = function(message, type = 'success') {
+            const box = document.getElementById('alert-box');
+            const msg = document.getElementById('alert-message');
+            if (!box || !msg) return;
+            msg.textContent = message;
+            box.className = `mb-6 p-4 rounded-xl text-sm flex items-center justify-between shadow-sm transition-all ${
+                type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-rose-50 border border-rose-200 text-rose-800'
+            }`;
+            box.classList.remove('hidden');
+            setTimeout(() => hideAlert(), 4000);
+        }
+
+        window.hideAlert = function() {
+            const box = document.getElementById('alert-box');
+            if (box) box.classList.add('hidden');
+        }
+
+        window.handleLogin = function(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+
+            const found = window.db.users.find(u => u.username === user && u.pass === pass);
+            if (found || (user === 'admin' && pass === 'admin123')) {
+                currentLoggedUsername = user;
+                loadUserLocalData(user);
+                if (firestoreDb && currentUser) {
+                    syncUserCollections(user);
+                }
+                
+                document.getElementById('login-container').classList.add('hidden');
+                document.getElementById('main-app-container').classList.remove('hidden');
+                document.getElementById('current-user-badge').innerHTML = `<i class="fa-solid fa-user-shield mr-1"></i> ${user}`;
+                window.showAlert('Login berhasil!', 'success');
+                switchTab('master');
+            } else {
+                window.showAlert('Gagal masuk. Periksa kembali username atau password Anda.', 'error');
+            }
+        }
+
+        window.handleLogout = function() {
+            currentLoggedUsername = null;
+            document.getElementById('main-app-container').classList.add('hidden');
+            document.getElementById('login-container').classList.remove('hidden');
+            document.getElementById('form-login').reset();
+            window.showAlert('Anda telah keluar dari sistem.', 'success');
+        }
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-indigo-100 hover:bg-indigo-600";
+            });
+
+            const targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+            
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-white text-indigo-700 shadow-sm";
+            }
+
+            if (tabId === 'master') renderMaster();
+            else if (tabId === 'bagian') renderBagian();
+            else if (tabId === 'users') renderUsers();
+            else if (tabId === 'in' || tabId === 'out') {
+                populateDropdowns();
+                setDefaultDateTime(tabId);
+                renderTransactions(tabId);
+            } else if (tabId === 'so') {
+                populateDropdownsSO();
+                setDefaultDateTime('so');
+                renderSO();
+            } else if (tabId === 'view') renderView();
+        }
+
+        function setDefaultDateTime(type) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
+            const el = document.getElementById(`${type}-date`);
+            if (el) el.value = formatted;
+        }
+
+        window.saveMaster = function(e) {
+            e.preventDefault();
+            const plu = document.getElementById('master-plu').value.trim();
+            const desc = document.getElementById('master-desc').value.trim();
+
+            if (window.db.master.some(item => item.plu === plu)) {
+                window.showAlert(`PLU "${plu}" sudah terdaftar!`, 'error');
+                return;
+            }
+
+            const newItem = { plu, desc };
+            window.db.master.push(newItem);
+            window.saveCloudData('master', plu, newItem);
+            document.getElementById('form-master').reset();
+            renderMaster();
+            window.showAlert(`Master barang ${plu} berhasil disimpan.`);
+        }
+
+        window.deleteMaster = function(plu) {
+            if (confirm(`Yakin ingin menghapus PLU ${plu}?`)) {
+                window.db.master = window.db.master.filter(item => item.plu !== plu);
+                window.deleteCloudData('master', plu);
+                renderMaster();
+                window.showAlert('Master barang berhasil dihapus.', 'success');
+            }
+        }
+
+        function renderMaster() {
+            const tbody = document.getElementById('table-master-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const countEl = document.getElementById('count-master');
+            if (countEl) countEl.textContent = `${window.db.master.length} Item`;
+
+            if (window.db.master.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400 italic">Belum ada data master barang.</td></tr>`;
+                return;
+            }
+
+            window.db.master.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-700">${item.plu}</td>
+                    <td class="p-4 text-slate-600">${item.desc}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteMaster('${item.plu}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold text-xs" title="Hapus">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.saveBagian = function(e) {
+            e.preventDefault();
+            const namaBagian = document.getElementById('master-nama-bagian').value.trim();
+
+            if (window.db.bagian.some(item => item.nama.toLowerCase() === namaBagian.toLowerCase())) {
+                window.showAlert(`Bagian "${namaBagian}" sudah terdaftar!`, 'error');
+                return;
+            }
+
+            const id = Date.now().toString();
+            const newBagian = { id, nama: namaBagian };
+            window.db.bagian.push(newBagian);
+            window.saveCloudData('bagian', id, newBagian);
+            document.getElementById('form-bagian').reset();
+            renderBagian();
+            window.showAlert(`Master Bagian "${namaBagian}" berhasil disimpan.`);
+        }
+
+        window.deleteBagian = function(id) {
+            if (confirm('Yakin ingin menghapus bagian ini?')) {
+                window.db.bagian = window.db.bagian.filter(item => String(item.id) !== String(id));
+                window.deleteCloudData('bagian', id);
+                renderBagian();
+                window.showAlert('Master Bagian berhasil dihapus.');
+            }
+        }
+
+        function renderBagian() {
+            const tbody = document.getElementById('table-bagian-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const countEl = document.getElementById('count-bagian');
+            if (countEl) countEl.textContent = `${window.db.bagian.length} Bagian`;
+
+            if (window.db.bagian.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="p-6 text-center text-slate-400 italic">Belum ada data master bagian.</td></tr>`;
+                return;
+            }
+
+            window.db.bagian.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-700">${item.nama}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteBagian('${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold text-xs" title="Hapus">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.saveNewUser = function(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('new-username');
+            const passwordInput = document.getElementById('new-password');
+            if (!usernameInput || !passwordInput) return;
+
+            const username = usernameInput.value.trim();
+            const pass = passwordInput.value.trim();
+
+            if (!username || !pass) {
+                window.showAlert('Username dan password harus diisi!', 'error');
+                return;
+            }
+
+            if (window.db.users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                window.showAlert(`Username "${username}" sudah terdaftar!`, 'error');
+                return;
+            }
+
+            const newUser = { username, pass };
+            window.db.users.push(newUser);
+            window.saveCloudData('users', username, newUser);
+
+            usernameInput.value = '';
+            passwordInput.value = '';
+            renderUsers();
+            window.showAlert(`User baru "${username}" berhasil ditambahkan.`);
+        }
+
+        window.deleteUser = function(username) {
+            if (username === 'admin') {
+                window.showAlert('User default "admin" tidak dapat dihapus!', 'error');
+                return;
+            }
+            if (confirm(`Yakin ingin menghapus user "${username}"?`)) {
+                window.db.users = window.db.users.filter(u => u.username !== username);
+                window.deleteCloudData('users', username);
+                renderUsers();
+                window.showAlert('User berhasil dihapus.');
+            }
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('table-users-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const countEl = document.getElementById('count-users');
+            if (countEl) countEl.textContent = `${window.db.users.length} User`;
+
+            if (window.db.users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400 italic">Belum ada user terdaftar.</td></tr>`;
+                return;
+            }
+
+            window.db.users.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-user text-indigo-600"></i> ${item.username} ${item.username === 'admin' ? '<span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Default</span>' : ''}
+                    </td>
+                    <td class="p-4 text-slate-500 font-mono text-xs">${item.pass}</td>
+                    <td class="p-4 text-center">
+                        ${item.username !== 'admin' ? `
+                        <button onclick="deleteUser('${item.username}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold text-xs" title="Hapus User">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>` : '<span class="text-xs text-slate-400 italic">-</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function populateDropdowns() {
+            ['in', 'out'].forEach(type => {
+                const select = document.getElementById(`${type}-plu`);
+                if (select) {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">-- Pilih Barang --</option>';
+                    window.db.master.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.plu;
+                        opt.textContent = `${item.plu} - ${item.desc}`;
+                        select.appendChild(opt);
+                    });
+                    select.value = currentVal;
+                }
+            });
+
+            const outBagianSelect = document.getElementById('out-bagian');
+            if (outBagianSelect) {
+                const currentBagianVal = outBagianSelect.value;
+                outBagianSelect.innerHTML = '<option value="">-- Pilih Bagian --</option>';
+                window.db.bagian.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.nama;
+                    opt.textContent = item.nama;
+                    outBagianSelect.appendChild(opt);
+                });
+                outBagianSelect.value = currentBagianVal;
+            }
+        }
+
+        function populateDropdownsSO() {
+            const select = document.getElementById('so-plu');
+            if (select) {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Pilih Barang --</option>';
+                window.db.master.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.plu;
+                    opt.textContent = `${item.plu} - ${item.desc}`;
+                    select.appendChild(opt);
+                });
+                select.value = currentVal;
+            }
+        }
+
+        window.saveTransaction = function(e, type) {
+            e.preventDefault();
+            const plu = document.getElementById(`${type}-plu`).value;
+            const dateTimeRaw = document.getElementById(`${type}-date`).value;
+            const qty = parseInt(document.getElementById(`${type}-qty`).value);
+            const keterangan = document.getElementById(`${type}-ket`).value.trim() || '-';
+            
+            let bagian = '-';
+            if (type === 'out') {
+                bagian = document.getElementById('out-bagian').value;
+            }
+
+            const dateObj = new Date(dateTimeRaw);
+            const formattedDateTime = isNaN(dateObj) ? dateTimeRaw : dateObj.toLocaleString('id-ID', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+
+            const id = Date.now().toString() + '_' + Math.random().toString(36).substring(2, 7);
+            const transaction = {
+                id,
+                plu,
+                bagian,
+                dateTimeRaw,
+                dateTime: formattedDateTime,
+                qty,
+                keterangan
+            };
+
+            window.db[type].push(transaction);
+            window.saveCloudData(type, id, transaction);
+            document.getElementById(`form-${type}`).reset();
+            setDefaultDateTime(type);
+            populateDropdowns();
+            renderTransactions(type);
+            window.showAlert(`Transaksi ${type.toUpperCase()} berhasil disimpan.`);
+        }
+
+        window.saveSO = function(e) {
+            e.preventDefault();
+            const plu = document.getElementById('so-plu').value;
+            const dateTimeRaw = document.getElementById('so-date').value;
+            const qtyFisik = parseInt(document.getElementById('so-qty').value);
+            const keterangan = document.getElementById('so-ket').value.trim() || '-';
+
+            const totalIn = window.db.in.filter(i => i.plu === plu).reduce((sum, curr) => sum + curr.qty, 0);
+            const totalOut = window.db.out.filter(o => o.plu === plu).reduce((sum, curr) => sum + curr.qty, 0);
+            const qtySistem = totalIn - totalOut;
+            const selisih = qtyFisik - qtySistem;
+
+            const dateObj = new Date(dateTimeRaw);
+            const formattedDateTime = isNaN(dateObj) ? dateTimeRaw : dateObj.toLocaleString('id-ID', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+
+            const id = Date.now().toString() + '_' + Math.random().toString(36).substring(2, 7);
+            const soItem = {
+                id,
+                plu,
+                dateTimeRaw,
+                dateTime: formattedDateTime,
+                qtySistem,
+                qtyFisik,
+                selisih,
+                keterangan
+            };
+
+            window.db.so.push(soItem);
+            window.saveCloudData('so', id, soItem);
+            document.getElementById('form-so').reset();
+            setDefaultDateTime('so');
+            populateDropdownsSO();
+            renderSO();
+            window.showAlert('Data Stock Opname Fisik berhasil disimpan.');
+        }
+
+        window.deleteTransaction = function(type, id) {
+            if (confirm('Hapus data ini?')) {
+                window.db[type] = window.db[type].filter(item => String(item.id) !== String(id));
+                window.deleteCloudData(type, id);
+                if (type === 'so') renderSO();
+                else renderTransactions(type);
+                window.showAlert('Data berhasil dihapus.');
+            }
+        }
+
+        function renderSO() {
+            const tbody = document.getElementById('table-so-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const countEl = document.getElementById('count-so');
+            if (countEl) countEl.textContent = `${window.db.so.length} Data SO`;
+
+            if (window.db.so.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 italic">Belum ada data Stock Opname fisik.</td></tr>`;
+                return;
+            }
+
+            const sorted = [...window.db.so].sort((a, b) => new Date(b.dateTimeRaw) - new Date(a.dateTimeRaw));
+
+            sorted.forEach(item => {
+                const masterItem = window.db.master.find(m => m.plu === item.plu);
+                const desc = masterItem ? masterItem.desc : '(Barang Dihapus)';
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 text-slate-600 text-xs font-medium">${item.dateTime}</td>
+                    <td class="p-4 font-semibold text-slate-700">${item.plu}</td>
+                    <td class="p-4 text-slate-600">${desc}</td>
+                    <td class="p-4 text-right font-semibold text-slate-700">${item.qtySistem}</td>
+                    <td class="p-4 text-right font-bold text-blue-600">${item.qtyFisik}</td>
+                    <td class="p-4 text-right font-bold ${item.selisih < 0 ? 'text-rose-600' : (item.selisih > 0 ? 'text-emerald-600' : 'text-slate-600')}">${item.selisih > 0 ? '+' + item.selisih : item.selisih}</td>
+                    <td class="p-4 text-slate-500 text-xs">${item.keterangan}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteTransaction('so', '${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold text-xs" title="Hapus">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderTransactions(type) {
+            const tbody = document.getElementById(`table-${type}-body`);
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const countEl = document.getElementById(`count-${type}`);
+            if (countEl) countEl.textContent = `${window.db[type].length} Transaksi`;
+
+            if (window.db[type].length === 0) {
+                const colSpan = type === 'out' ? 7 : 6;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="p-6 text-center text-slate-400 italic">Belum ada data transaksi ${type.toUpperCase()}.</td></tr>`;
+                return;
+            }
+
+            const sorted = [...window.db[type]].sort((a, b) => new Date(b.dateTimeRaw) - new Date(a.dateTimeRaw));
+
+            sorted.forEach(item => {
+                const masterItem = window.db.master.find(m => m.plu === item.plu);
+                const desc = masterItem ? masterItem.desc : '(Barang Dihapus)';
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                
+                if (type === 'out') {
+                    tr.innerHTML = `
+                        <td class="p-4 text-slate-600 text-xs font-medium">${item.dateTime}</td>
+                        <td class="p-4 font-semibold text-slate-700">${item.plu}</td>
+                        <td class="p-4 text-slate-600">${desc}</td>
+                        <td class="p-4 text-slate-700 font-medium">${item.bagian || '-'}</td>
+                        <td class="p-4 text-right font-bold text-rose-600">${item.qty}</td>
+                        <td class="p-4 text-slate-500 text-xs">${item.keterangan}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteTransaction('out', '${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold text-xs" title="Hapus">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="p-4 text-slate-600 text-xs font-medium">${item.dateTime}</td>
+                        <td class="p-4 font-semibold text-slate-700">${item.plu}</td>
+                        <td class="p-4 text-slate-600">${desc}</td>
+                        <td class="p-4 text-right font-bold text-emerald-600">${item.qty}</td>
+                        <td class="p-4 text-slate-500 text-xs">${item.keterangan}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteTransaction('in', '${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold text-xs" title="Hapus">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderView() {
+            const tbody = document.getElementById('table-view-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (window.db.master.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Belum ada master barang untuk direkap.</td></tr>`;
+                return;
+            }
+
+            window.db.master.forEach(master => {
+                const totalIn = window.db.in
+                    .filter(i => i.plu === master.plu)
+                    .reduce((sum, curr) => sum + curr.qty, 0);
+
+                const totalOut = window.db.out
+                    .filter(o => o.plu === master.plu)
+                    .reduce((sum, curr) => sum + curr.qty, 0);
+
+                const stock = totalIn - totalOut;
+
+                const itemSOList = window.db.so.filter(s => s.plu === master.plu);
+                let fisikQty = '-';
+                let stockVsFisik = '-';
+
+                if (itemSOList.length > 0) {
+                    itemSOList.sort((a, b) => new Date(b.dateTimeRaw) - new Date(a.dateTimeRaw));
+                    const latestSO = itemSOList[0];
+                    const fisikVal = latestSO.qtyFisik;
+                    fisikQty = fisikVal;
+                    
+                    const diff = fisikVal - stock;
+                    stockVsFisik = diff > 0 ? '+' + diff : diff;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                
+                let diffClass = 'text-slate-600';
+                if (typeof stockVsFisik === 'string' && stockVsFisik !== '-') {
+                    const numDiff = parseInt(stockVsFisik);
+                    if (numDiff < 0) diffClass = 'text-rose-600 font-bold';
+                    else if (numDiff > 0) diffClass = 'text-emerald-600 font-bold';
+                }
+
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-700">${master.plu}</td>
+                    <td class="p-4 text-slate-600">${master.desc}</td>
+                    <td class="p-4 text-right font-semibold text-emerald-600">${totalIn}</td>
+                    <td class="p-4 text-right font-semibold text-rose-600">${totalOut}</td>
+                    <td class="p-4 text-right font-bold ${stock < 0 ? 'text-rose-700 bg-rose-50' : 'text-slate-800'}">${stock}</td>
+                    <td class="p-4 text-right font-semibold text-blue-600">${fisikQty}</td>
+                    <td class="p-4 text-right ${diffClass}">${stockVsFisik}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.generateReport = function() {
+            const startDate = document.getElementById('report-start').value;
+            const endDate = document.getElementById('report-end').value;
+
+            if (!startDate || !endDate) {
+                window.showAlert('Silakan pilih Tanggal Awal dan Tanggal Akhir.', 'error');
+                return;
+            }
+
+            if (startDate > endDate) {
+                window.showAlert('Tanggal Awal tidak boleh lebih besar dari Tanggal Akhir.', 'error');
+                return;
+            }
+
+            const container = document.getElementById('report-result-container');
+            if (container) container.classList.remove('hidden');
+            
+            const rangeLabel = document.getElementById('report-range-label');
+            if (rangeLabel) rangeLabel.textContent = `Periode laporan: ${startDate} s/d ${endDate}`;
+
+            const filteredIn = window.db.in.filter(item => {
+                const d = item.dateTimeRaw.split('T')[0];
+                return d >= startDate && d <= endDate;
+            });
+
+            const filteredOut = window.db.out.filter(item => {
+                const d = item.dateTimeRaw.split('T')[0];
+                return d >= startDate && d <= endDate;
+            });
+
+            let totalQtyOutPeriod = filteredOut.reduce((sum, curr) => sum + curr.qty, 0);
+            const statOut = document.getElementById('rep-stat-out');
+            if (statOut) statOut.textContent = totalQtyOutPeriod;
+
+            const tbodyReport = document.getElementById('table-report-body');
+            if (!tbodyReport) return;
+            tbodyReport.innerHTML = '';
+
+            let activeItemsCount = 0;
+            let suggestions = [];
+
+            window.db.master.forEach(master => {
+                const inPeriod = filteredIn.filter(i => i.plu === master.plu).reduce((s, c) => s + c.qty, 0);
+                const outPeriod = filteredOut.filter(o => o.plu === master.plu).reduce((s, c) => s + c.qty, 0);
+
+                const totalInAll = window.db.in.filter(i => i.plu === master.plu).reduce((s, c) => s + c.qty, 0);
+                const totalOutAll = window.db.out.filter(o => o.plu === master.plu).reduce((s, c) => s + c.qty, 0);
+                const currentStock = totalInAll - totalOutAll;
+
+                let suggestQty = outPeriod - currentStock;
+                if (suggestQty < 0) suggestQty = 0;
+
+                if (inPeriod > 0 || outPeriod > 0) activeItemsCount++;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-700">${master.plu}</td>
+                    <td class="p-4 text-slate-600">${master.desc}</td>
+                    <td class="p-4 text-right text-emerald-600 font-semibold">${inPeriod}</td>
+                    <td class="p-4 text-right text-rose-600 font-semibold">${outPeriod}</td>
+                    <td class="p-4 text-right font-bold text-slate-800">${currentStock}</td>
+                `;
+                tbodyReport.appendChild(tr);
+
+                suggestions.push({
+                    plu: master.plu,
+                    desc: master.desc,
+                    outPeriod,
+                    currentStock,
+                    suggestQty
+                });
+            });
+
+            const statItems = document.getElementById('rep-stat-items');
+            if (statItems) statItems.textContent = activeItemsCount;
+
+            suggestions.sort((a, b) => b.suggestQty - a.suggestQty);
+
+            const tbodySuggest = document.getElementById('table-suggestion-body');
+            if (!tbodySuggest) return;
+            tbodySuggest.innerHTML = '';
+
+            let needOrderCount = 0;
+            suggestions.forEach(item => {
+                let statusBadge = '';
+                if (item.suggestQty > 0 || item.currentStock <= 3) {
+                    needOrderCount++;
+                    const qtyNeeded = item.suggestQty > 0 ? item.suggestQty : (5 - item.currentStock);
+                    statusBadge = `<span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-semibold">⚠️ Usulan Order: +${qtyNeeded > 0 ? qtyNeeded : 5} unit</span>`;
+                } else {
+                    statusBadge = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-semibold">Stok Aman (Cukup)</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-white/5 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3.5 font-semibold text-indigo-200">${item.plu}</td>
+                    <td class="p-3.5 text-white">${item.desc}</td>
+                    <td class="p-3.5 text-right text-rose-300">${item.outPeriod}</td>
+                    <td class="p-3.5 text-right font-bold ${item.currentStock <= 3 ? 'text-rose-400' : 'text-white'}">${item.currentStock}</td>
+                    <td class="p-3.5 text-center">${statusBadge}</td>
+                `;
+                tbodySuggest.appendChild(tr);
+            });
+
+            const statSuggest = document.getElementById('rep-stat-suggest');
+            if (statSuggest) statSuggest.textContent = `${needOrderCount} Item`;
+        }
+
+        window.onload = function() {
+            const mainContainer = document.getElementById('main-app-container');
+            const loginContainer = document.getElementById('login-container');
+            if (mainContainer && loginContainer) {
+                mainContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+            }
+            initFirebase();
+        };
+    </script>
+</body>
+</html>
